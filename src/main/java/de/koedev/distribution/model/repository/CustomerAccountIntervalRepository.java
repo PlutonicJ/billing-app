@@ -1,6 +1,7 @@
 package de.koedev.distribution.model.repository;
 
 import de.koedev.distribution.model.CustomerAccountInterval;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,4 +29,20 @@ public interface CustomerAccountIntervalRepository extends JpaRepository<Custome
                 ORDER BY cai.customerId
             """)
     Page<String> findDistinctCustomerIdsByCreatedDateTime(@Param("createdDateTime") LocalDateTime now, Pageable pageable);
+
+    @Query("""
+                SELECT COUNT(cai)
+                FROM CustomerAccountInterval cai
+                WHERE cai.customerId = :customerId
+                AND cai.iban = :iban
+                AND (
+                    (:intervalStart BETWEEN cai.intervalStart AND cai.intervalEnd) OR
+                    (:intervalEnd BETWEEN cai.intervalStart AND cai.intervalEnd) OR
+                    (cai.intervalStart BETWEEN :intervalStart AND :intervalEnd)
+                )
+            """)
+    int countOverlappingIntervals(@Param("customerId") String customerId,
+                                  @Param("iban") String iban,
+                                  @Param("intervalStart") LocalDate intervalStart,
+                                  @Param("intervalEnd") LocalDate intervalEnd);
 }

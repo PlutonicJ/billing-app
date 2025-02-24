@@ -68,4 +68,34 @@ public interface TransactionInfoRepository extends CrudRepository<TransactionInf
             @Param("intervalStart") LocalDateTime intervalStart,
             @Param("intervalEnd") LocalDateTime intervalEnd
     );
+
+    @Query("""
+                SELECT DISTINCT new de.koedev.distribution.model.CustomerIdIbanCombination(ti.customerId, ti.iban)
+                FROM TransactionInfo ti
+                WHERE ti.customerId = :customerId
+                AND ti.createdDateTime < :currentTime
+                ORDER BY ti.customerId, ti.iban
+            """)
+    Page<CustomerIdIbanCombination> findCustomerIdIbanCombinationsByCustomerId(
+            @Param("customerId") String customerId,
+            @Param("currentTime") LocalDateTime currentTime,
+            Pageable pageable);
+
+    @Query("""
+                SELECT DISTINCT ti.customerId
+                FROM TransactionInfo ti
+                LEFT JOIN CustomerAccountInterval cai
+                  ON cai.customerId = ti.customerId
+                  AND cai.iban = ti.iban
+                WHERE ti.createdDateTime > (
+                    SELECT COALESCE(MAX(cai2.intervalEnd), :defaultDate)
+                    FROM CustomerAccountInterval cai2
+                    WHERE cai2.customerId = ti.customerId
+                    AND cai2.iban = ti.iban
+                )
+                ORDER BY ti.customerId
+            """)
+    Page<String> findDistinctCustomerIdsWithNewTransactions(
+            @Param("defaultDate") LocalDateTime defaultDate,
+            Pageable pageable);
 }

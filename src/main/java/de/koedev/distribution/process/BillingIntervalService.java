@@ -75,7 +75,7 @@ public class BillingIntervalService {
         };
     }
 
-    private Period getPeriod(BillingCycle cycle) {
+    public static Period getPeriod(BillingCycle cycle) {
         return switch (cycle) {
             case MONTHLY -> Period.ofMonths(1);
             case QUARTERLY -> Period.ofMonths(3);

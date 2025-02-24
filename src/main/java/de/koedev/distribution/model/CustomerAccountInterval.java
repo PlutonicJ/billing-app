@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor(force = true)
 @Table(name = "CUSTOMER_ACCOUNT_INTERVAL", uniqueConstraints = {
-        @UniqueConstraint(name = "UQ_CAI_CCI", columnNames = {"CREATED_DATE_TIME", "CUSTOMER_ID", "IBAN"})
+        @UniqueConstraint(name = "UQ_CAI_CCI", columnNames = {"CREATED_DATE_TIME", "CUSTOMER_ID", "IBAN", "INTERVAL_START", "INTERVAL_END"})
 })
 public class CustomerAccountInterval extends DomainObject {
     private static final long serialVersionUID = 1L;

@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,16 +49,15 @@ class ChargedBillingCycleCreationServiceTest {
                 .build();
 
         Page<CustomerAccountInterval> intervalPage = new PageImpl<>(List.of(interval));
-        Pageable pageable = PageRequest.of(0, 100);
 
         when(customerAccountIntervalRepository.findDistinctCustomerIdsByCreatedDateTime(any(), any()))
                 .thenReturn(new PageImpl<>(List.of("exampleCustomerId")));
-        when(customerAccountIntervalRepository.findByCustomerIdAndCreatedDateTime("exampleCustomerId", now, pageable))
+        when(customerAccountIntervalRepository.findByCustomerIdAndCreatedDateTime(anyString(), any(), any()))
                 .thenReturn(intervalPage);
         when(chargedBillingCycleRepository.existsByCustomerIdAndCreatedDateTime("exampleCustomerId", now))
                 .thenReturn(false);
 
-        chargedBillingCycleCreationService.createChargedBillingCycles(now);
+        chargedBillingCycleCreationService.createChargedBillingCycles(now, "exampleCustomerId");
 
         verify(chargedBillingCycleRepository, times(1)).save(any(ChargedBillingCycle.class));
     }

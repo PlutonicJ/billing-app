@@ -1,6 +1,7 @@
 
 package de.koedev.distribution.process;
 
+import de.koedev.distribution.model.BillingCycle;
 import de.koedev.distribution.model.CustomerIdIbanCombination;
 import de.koedev.distribution.model.repository.BillingReceiverAccountRepository;
 import de.koedev.distribution.model.repository.BillingReceiverRepository;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +51,8 @@ class CustomerAccountIntervalCreationServiceTest {
 
     @Test
     void testCreateCustomerAccountIntervals() {
+        LocalDateTime now = LocalDateTime.now();
+
         // Testdaten vorbereiten
         CustomerIdIbanCombination combination = new CustomerIdIbanCombination("customer1", "iban1");
         List<CustomerIdIbanCombination> combinations = List.of(combination);
@@ -57,13 +61,15 @@ class CustomerAccountIntervalCreationServiceTest {
         Page<CustomerIdIbanCombination> page = new PageImpl<>(combinations);
 
         // Mock für findCustomerIdIbanCombinations
-        when(transactionInfoRepository.findCustomerIdIbanCombinations(any(LocalDateTime.class), any(Pageable.class)))
+        when(transactionInfoRepository.findCustomerIdIbanCombinationsByCustomerId(anyString(), any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(page);
 
+        when(billingIntervalService.calculateInterval(any(), any(), any())).thenReturn(new BillingInterval(now.toLocalDate().minusDays(1), now.toLocalDate(), billingIntervalService.getPeriod(BillingCycle.MONTHLY)));
+
         // Test ausführen
-        customerAccountIntervalCreationService.createCustomerAccountIntervals(LocalDateTime.now(), Optional.empty());
+        customerAccountIntervalCreationService.createCustomerAccountIntervals(now, Optional.empty(), "customer1");
 
         // Überprüfen, ob die Methode aufgerufen wurde
-        verify(transactionInfoRepository).findCustomerIdIbanCombinations(any(LocalDateTime.class), any(Pageable.class));
+        verify(transactionInfoRepository).findCustomerIdIbanCombinationsByCustomerId(anyString(), any(LocalDateTime.class), any(Pageable.class));
     }
 }

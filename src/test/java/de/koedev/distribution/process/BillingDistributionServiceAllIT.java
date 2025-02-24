@@ -8,6 +8,7 @@ import de.koedev.distribution.model.repository.TransactionInfoRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +86,7 @@ public class BillingDistributionServiceAllIT {
         LocalDateTime fixedNow = LocalDateTime.of(2025, 2, 28, 23, 59, 59);
 
         // Starte die Verteilung und Verarbeitung der TransactionInfos
-        billingDistributionService.distributeProcessingOfTransactionInfos(fixedNow);
+        billingDistributionService.distributeProcessingOfTransactionInfos(fixedNow, Optional.empty());
 
         // CustomerAccountIntervals und ChargedBillingCycles zählen
         long accountIntervalCount = customerAccountIntervalRepository.count();
