@@ -6,8 +6,10 @@ import de.koedev.distribution.model.repository.ChargedBillingCycleRepository;
 import de.koedev.distribution.model.repository.CustomerAccountIntervalRepository;
 import de.koedev.distribution.model.repository.TransactionInfoRepository;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @RequiredArgsConstructor
-public class BillingDistributionServiceAllIT {
+public class BillingDistributionServiceWithBillingDateIT {
 
     @Autowired
     private BillingDistributionService billingDistributionService;
@@ -81,11 +83,54 @@ public class BillingDistributionServiceAllIT {
 
     @Test
     @Transactional
-    void testDistributeProcessingOfTransactionInfos() {
+    void testDistributeProcessingOfTransactionInfosWithBillingDate() {
         LocalDateTime fixedNow = LocalDateTime.of(2025, 2, 28, 23, 59, 59);
+        Optional<LocalDate> billingDate = Optional.of(LocalDate.of(2025, 2, 28));
 
-        // Starte die Verteilung und Verarbeitung der TransactionInfos
-        billingDistributionService.distributeProcessingOfTransactionInfos(fixedNow);
+        // Starte die Verteilung und Verarbeitung der TransactionInfos mit billingDate
+        billingDistributionService.distributeProcessingOfTransactionInfos(fixedNow, billingDate);
+
+        // CustomerAccountIntervals und ChargedBillingCycles zählen
+        long accountIntervalCount = customerAccountIntervalRepository.count();
+        long chargedBillingCycleCount = chargedBillingCycleRepository.count();
+
+        // Überprüfen, ob CustomerAccountIntervals und ChargedBillingCycles erzeugt wurden
+        assertThat(accountIntervalCount).isGreaterThan(0);
+        assertThat(chargedBillingCycleCount).isGreaterThan(0);
+
+        // Überprüfen, ob nur für Gruppe 1 CustomerAccountIntervals erzeugt wurden
+        assertEquals(20, accountIntervalCount);
+
+        // Überprüfen, ob die Anzahl der ChargedBillingCycles korrekt ist
+        assertThat(chargedBillingCycleCount).isGreaterThan(0);
+
+        Pageable pageable = PageRequest.of(0, 1000);
+        LocalDateTime intervalCreatedDateTime = customerAccountIntervalRepository.findAll(pageable)
+                .getContent()
+                .stream()
+                .map(CustomerAccountInterval::getCreatedDateTime)
+                .findFirst()
+                .orElseThrow();
+
+        boolean allEqual = customerAccountIntervalRepository.findAll(pageable)
+                .getContent()
+                .stream()
+                .allMatch(interval -> interval.getCreatedDateTime().isEqual(intervalCreatedDateTime));
+        assertThat(allEqual).isTrue();
+
+        // Debug-Ausgaben zur Kontrolle
+        System.out.println("Erzeugte CustomerAccountIntervals mit billingDate: " + accountIntervalCount);
+        System.out.println("Erzeugte ChargedBillingCycles mit billingDate: " + chargedBillingCycleCount);
+    }
+
+    @Test
+    @Transactional
+    void testDistributeProcessingOfTransactionInfosWithBillingDateEarlier() {
+        LocalDateTime fixedNow = LocalDateTime.of(2025, 2, 28, 23, 59, 59);
+        Optional<LocalDate> billingDate = Optional.of(LocalDate.of(2025, 2, 23));
+
+        // Starte die Verteilung und Verarbeitung der TransactionInfos mit billingDate
+        billingDistributionService.distributeProcessingOfTransactionInfos(fixedNow, billingDate);
 
         // CustomerAccountIntervals und ChargedBillingCycles zählen
         long accountIntervalCount = customerAccountIntervalRepository.count();
@@ -148,10 +193,10 @@ public class BillingDistributionServiceAllIT {
                         cai.getIntervalStart().atStartOfDay(),
                         cai.getIntervalEnd().plusDays(1).atStartOfDay() // Bis einschließlich Intervall-Ende
                 ).size()).sum();
-        assertEquals(432, transactionInfosCount);
+        assertEquals(384, transactionInfosCount);
 
         // Debug-Ausgaben zur Kontrolle
-        System.out.println("Erzeugte CustomerAccountIntervals: " + accountIntervalCount);
-        System.out.println("Erzeugte ChargedBillingCycles: " + chargedBillingCycleCount);
+        System.out.println("Erzeugte CustomerAccountIntervals mit billingDate: " + accountIntervalCount);
+        System.out.println("Erzeugte ChargedBillingCycles mit billingDate: " + chargedBillingCycleCount);
     }
 }

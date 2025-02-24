@@ -4,6 +4,7 @@ import de.koedev.distribution.model.CustomerAccountInterval;
 import de.koedev.distribution.model.CustomerIdIbanCombination;
 import de.koedev.distribution.model.TransactionInfo;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -51,4 +52,20 @@ public interface TransactionInfoRepository extends CrudRepository<TransactionInf
     Page<TransactionInfo> findTransactionInfosForCustomerAccountInterval(
             @Param("interval") CustomerAccountInterval interval,
             Pageable pageable);
+
+    @Query("""
+                SELECT ti
+                FROM TransactionInfo ti
+                WHERE ti.customerId = :customerId
+                  AND ti.iban = :iban
+                  AND ti.createdDateTime >= :intervalStart
+                  AND ti.createdDateTime < :intervalEnd
+                ORDER BY ti.createdDateTime ASC
+            """)
+    List<TransactionInfo> findByCustomerIdAndIbanAndCreatedDateTimeBetween(
+            @Param("customerId") String customerId,
+            @Param("iban") String iban,
+            @Param("intervalStart") LocalDateTime intervalStart,
+            @Param("intervalEnd") LocalDateTime intervalEnd
+    );
 }

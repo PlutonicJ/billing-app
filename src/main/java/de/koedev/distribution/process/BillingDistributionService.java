@@ -1,5 +1,6 @@
 package de.koedev.distribution.process;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,12 @@ public class BillingDistributionService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void distributeProcessingOfTransactionInfos(LocalDateTime now) {
         customerAccountIntervalCreationService.createCustomerAccountIntervals(now, Optional.empty());
+        chargedBillingCycleCreationService.createChargedBillingCycles(now);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void distributeProcessingOfTransactionInfos(LocalDateTime now, Optional<LocalDate> billingDate) {
+        customerAccountIntervalCreationService.createCustomerAccountIntervals(now, billingDate);
         chargedBillingCycleCreationService.createChargedBillingCycles(now);
     }
 }
